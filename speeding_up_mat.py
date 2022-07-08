@@ -92,5 +92,45 @@ def vis_stacked_graph():
     cv2.waitKey(0)
 
 
+def stacked_graph_race():
+    data = np.array(
+        [[10, 290, 280], [10, 100, 90], [200, 300, 100], [150, 250, 100]]
+    )
+    df = pd.DataFrame(data, columns=['start', 'end', 'diff'])
+
+    n_rows, n_cols = df.shape
+    positions = np.arange(n_rows)
+    colors = plt.get_cmap("tab20c")(np.linspace(0, 1, n_cols))
+
+    fig, ax = plt.subplots()
+    ax.set_yticks(positions)
+    ax.set_yticklabels(df.index)
+    ax.set_xlim([0, int(df['end'].max())])
+    ax.set_ylim([-1, n_cols + 1])
+    ax.invert_yaxis()
+    fig.canvas.draw()
+    bg = fig.canvas.copy_from_bbox(fig.bbox)
+
+    for i in range(df['end'].max()):
+        fig.canvas.restore_region(bg)
+
+        df_s = (i - df['start']).clip(0, df['diff'])
+        bar = ax.barh(positions, df_s, left=df['start'], color=colors)
+
+        for rect in bar:
+            ax.draw_artist(rect)
+        ax.draw_artist(ax.axvline(i, color='red'))
+
+        fig.canvas.blit(fig.bbox)
+        fig.canvas.flush_events()
+        np_plot = cv2.cvtColor(np.array(fig.canvas.renderer.buffer_rgba()), cv2.COLOR_RGBA2BGR)
+
+        cv2.imshow('plot', np_plot)
+        key = cv2.waitKey(1)
+        if key == ord('q'):
+            break
+
+
 if __name__ == '__main__':
-    vis_stacked_graph()
+    # vis_stacked_graph()
+    stacked_graph_race()
